@@ -1,15 +1,13 @@
 import sys
 import os
-import ctypes
 import winreg
-from ctypes import wintypes
 
 from PySide6.QtWidgets import (
     QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
     QPushButton, QStackedWidget, QSystemTrayIcon, QMenu, QButtonGroup,
-    QMessageBox, QDialog, QFrame,
+    QMessageBox, QDialog, QFrame, QSizePolicy,
 )
-from PySide6.QtCore import Qt, QTimer
+from PySide6.QtCore import Qt, QTimer, QRect
 from PySide6.QtGui import QIcon, QPixmap, QPainter, QColor, QFont, QAction
 
 from data_manager import DataManager
@@ -69,6 +67,90 @@ class HeaderWidget(QWidget):
                 window.showMaximized()
 
 
+class CentralWidget(QWidget):
+    """中央控件 - 处理窗口边缘拖拽缩放"""
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self._main = parent
+        self._resize_edge = None
+        self._resize_start = None
+        self._resize_geo = None
+        self.setMouseTracking(True)
+
+    @staticmethod
+    def _get_edge(pos, w, h, b=5):
+        left = pos.x() < b
+        right = pos.x() > w - b
+        top = pos.y() < b
+        bottom = pos.y() > h - b
+        if top and left: return "tl"
+        if top and right: return "tr"
+        if bottom and left: return "bl"
+        if bottom and right: return "br"
+        if top: return "t"
+        if bottom: return "b"
+        if left: return "l"
+        if right: return "r"
+        return None
+
+    def mouseMoveEvent(self, event):
+        if self._main.pinned or self._main.isMaximized():
+            self.setCursor(Qt.ArrowCursor)
+            return
+        if self._resize_edge:
+            self._do_resize(event)
+            return
+        pos = event.position().toPoint()
+        edge = self._get_edge(pos, self.width(), self.height())
+        cursors = {
+            "tl": Qt.SizeFDiagCursor, "br": Qt.SizeFDiagCursor,
+            "tr": Qt.SizeBDiagCursor, "bl": Qt.SizeBDiagCursor,
+            "t": Qt.SizeVerCursor, "b": Qt.SizeVerCursor,
+            "l": Qt.SizeHorCursor, "r": Qt.SizeHorCursor,
+        }
+        self.setCursor(cursors.get(edge, Qt.ArrowCursor))
+
+    def mousePressEvent(self, event):
+        if event.button() == Qt.LeftButton and not self._main.pinned:
+            pos = event.position().toPoint()
+            edge = self._get_edge(pos, self.width(), self.height())
+            if edge:
+                self._resize_edge = edge
+                self._resize_start = event.globalPosition().toPoint()
+                self._resize_geo = self._main.geometry()
+                return
+        super().mousePressEvent(event)
+
+    def mouseReleaseEvent(self, event):
+        self._resize_edge = None
+        super().mouseReleaseEvent(event)
+
+    def _do_resize(self, event):
+        delta = event.globalPosition().toPoint() - self._resize_start
+        geo = QRect(self._resize_geo)
+        min_w = self._main.minimumWidth()
+        min_h = self._main.minimumHeight()
+        edge = self._resize_edge
+
+        if "l" in edge:
+            nw = geo.width() - delta.x()
+            if nw >= min_w:
+                geo.setX(geo.x() + delta.x())
+                geo.setWidth(nw)
+        if "r" in edge:
+            geo.setWidth(max(geo.width() + delta.x(), min_w))
+        if "t" in edge:
+            nh = geo.height() - delta.y()
+            if nh >= min_h:
+                geo.setY(geo.y() + delta.y())
+                geo.setHeight(nh)
+        if "b" in edge:
+            geo.setHeight(max(geo.height() + delta.y(), min_h))
+
+        self._main.setGeometry(geo)
+
+
 class MainWindow(QMainWindow):
     """主窗口"""
 
@@ -97,36 +179,11 @@ class MainWindow(QMainWindow):
         self.tab_hole.setChecked(True)
         self.stack.setCurrentIndex(0)
 
-    def nativeEvent(self, eventType, message):
-        """处理窗口边缘拖拽缩放 (WM_NCHITTEST)"""
-        if eventType == "windows_generic_MSG":
-            ptr = ctypes.c_void_p(int(message))
-            msg = ctypes.cast(ptr, ctypes.POINTER(wintypes.MSG))
-            if msg.contents.message == 0x0084:
-                # 带符号扩展提取坐标（兼容多显示器负坐标）
-                x = ctypes.c_short(msg.contents.lParam & 0xFFFF).value
-                y = ctypes.c_short((msg.contents.lParam >> 16) & 0xFFFF).value
-                geo = self.geometry()
-                b = 5
-                left = x < geo.x() + b
-                right = x > geo.x() + geo.width() - b
-                top = y < geo.y() + b
-                bottom = y > geo.y() + geo.height() - b
-                if top and left: return True, 13
-                if top and right: return True, 14
-                if bottom and left: return True, 16
-                if bottom and right: return True, 17
-                if top: return True, 12
-                if bottom: return True, 15
-                if left: return True, 10
-                if right: return True, 11
-                return True, 1  # HTCLIENT - 客户端区域显示正常光标
-        return False, 0
-
     # ========== UI 构建 ==========
 
     def setup_ui(self):
-        central = QWidget()
+        central = CentralWidget(self)
+        central.setObjectName("central")
         self.setCentralWidget(central)
         layout = QVBoxLayout(central)
         layout.setContentsMargins(0, 0, 0, 0)
@@ -310,7 +367,7 @@ class MainWindow(QMainWindow):
                 color: {text};
                 font-size: {font_size}px;
             }}
-            QMainWindow {{
+            #central {{
                 border: 1px solid {border};
             }}
             #header {{
