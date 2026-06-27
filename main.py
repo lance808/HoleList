@@ -182,6 +182,7 @@ class MainWindow(QMainWindow):
         self.setWindowTitle("挖坑备忘录")
         self.setMinimumSize(600, 400)
         self.setWindowFlags(Qt.FramelessWindowHint)
+        self.setAttribute(Qt.WA_TranslucentBackground)
 
         self.setup_ui()
         self.setup_tray()
@@ -380,13 +381,18 @@ class MainWindow(QMainWindow):
         font_size = self.settings.get("font_size", 12)
 
         stylesheet = f"""
-            QMainWindow, QWidget {{
+            QMainWindow {{
+                background-color: transparent;
+            }}
+            QWidget {{
                 background-color: {bg};
                 color: {text};
                 font-size: {font_size}px;
             }}
             #central {{
+                background-color: {bg};
                 border: 1px solid {border};
+                border-radius: 10px;
             }}
             #header {{
                 background-color: {bg};
