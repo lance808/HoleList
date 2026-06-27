@@ -106,7 +106,7 @@ class HoleItemWidget(QWidget):
 
         if status in ("filling", "completed"):
             left_btn = QPushButton("←")
-            left_btn.setFixedSize(28, 28)
+            left_btn.setFixedSize(32, 28)
             left_btn.setToolTip("回退到上一状态")
             if status == "filling":
                 left_btn.clicked.connect(lambda: self.move_requested.emit(self.hole["id"], "digging"))
@@ -116,7 +116,7 @@ class HoleItemWidget(QWidget):
 
         if status in ("digging", "filling"):
             right_btn = QPushButton("→")
-            right_btn.setFixedSize(28, 28)
+            right_btn.setFixedSize(32, 28)
             right_btn.setToolTip("推进到下一状态")
             if status == "digging":
                 right_btn.clicked.connect(lambda: self.move_requested.emit(self.hole["id"], "filling"))
@@ -126,7 +126,7 @@ class HoleItemWidget(QWidget):
 
         if status == "completed":
             redo_btn = QPushButton("↺")
-            redo_btn.setFixedSize(28, 28)
+            redo_btn.setFixedSize(32, 28)
             redo_btn.setToolTip("重新挖坑")
             redo_btn.clicked.connect(lambda: self.move_requested.emit(self.hole["id"], "digging"))
             btn_layout.addWidget(redo_btn)

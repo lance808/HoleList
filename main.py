@@ -28,7 +28,7 @@ def create_icon(color="#4A90D9"):
     painter.setPen(Qt.white)
     font = QFont("Microsoft YaHei", 14, QFont.Bold)
     painter.setFont(font)
-    painter.drawText(pixmap.rect(), Qt.AlignCenter, "H")
+    painter.drawText(pixmap.rect(), Qt.AlignCenter, "HL")
     painter.end()
     return QIcon(pixmap)
 
@@ -232,14 +232,14 @@ class MainWindow(QMainWindow):
 
         # 主题切换
         self.theme_btn = QPushButton()
-        self.theme_btn.setFixedSize(32, 28)
+        self.theme_btn.setFixedSize(38, 28)
         self.theme_btn.setToolTip("切换白天/黑夜/自定义模式")
         self.theme_btn.clicked.connect(self.toggle_theme)
         layout.addWidget(self.theme_btn)
 
         # 设置按钮
         self.settings_btn = QPushButton("⚙")
-        self.settings_btn.setFixedSize(32, 28)
+        self.settings_btn.setFixedSize(38, 28)
         self.settings_btn.setToolTip("设置")
         self.settings_btn.clicked.connect(self.open_settings)
         layout.addWidget(self.settings_btn)
@@ -248,7 +248,7 @@ class MainWindow(QMainWindow):
 
         # 固定按钮
         self.pin_btn = QPushButton("📌")
-        self.pin_btn.setFixedSize(32, 28)
+        self.pin_btn.setFixedSize(38, 28)
         self.pin_btn.setCheckable(True)
         self.pin_btn.setToolTip("固定在桌面上（半透明悬挂）")
         self.pin_btn.clicked.connect(self.toggle_pin)
@@ -262,14 +262,14 @@ class MainWindow(QMainWindow):
 
         self.tab_hole = QPushButton("坑")
         self.tab_hole.setCheckable(True)
-        self.tab_hole.setFixedSize(72, 28)
+        self.tab_hole.setFixedSize(84, 28)
         self.tab_hole.setObjectName("tabBtn")
         self.tab_hole.clicked.connect(lambda: self.stack.setCurrentIndex(0))
         self.tab_group.addButton(self.tab_hole)
 
         self.tab_memo = QPushButton("备忘录")
         self.tab_memo.setCheckable(True)
-        self.tab_memo.setFixedSize(72, 28)
+        self.tab_memo.setFixedSize(100, 28)
         self.tab_memo.setObjectName("tabBtn")
         self.tab_memo.clicked.connect(lambda: self.stack.setCurrentIndex(1))
         self.tab_group.addButton(self.tab_memo)
