@@ -103,8 +103,9 @@ class MainWindow(QMainWindow):
             ptr = ctypes.c_void_p(int(message))
             msg = ctypes.cast(ptr, ctypes.POINTER(wintypes.MSG))
             if msg.contents.message == 0x0084:
-                x = msg.contents.lParam & 0xFFFF
-                y = (msg.contents.lParam >> 16) & 0xFFFF
+                # 带符号扩展提取坐标（兼容多显示器负坐标）
+                x = ctypes.c_short(msg.contents.lParam & 0xFFFF).value
+                y = ctypes.c_short((msg.contents.lParam >> 16) & 0xFFFF).value
                 geo = self.geometry()
                 b = 5
                 left = x < geo.x() + b
@@ -119,6 +120,7 @@ class MainWindow(QMainWindow):
                 if bottom: return True, 15
                 if left: return True, 10
                 if right: return True, 11
+                return True, 1  # HTCLIENT - 客户端区域显示正常光标
         return False, 0
 
     # ========== UI 构建 ==========
