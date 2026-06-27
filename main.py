@@ -8,7 +8,7 @@ from PySide6.QtWidgets import (
     QMessageBox, QDialog, QFrame, QSizePolicy,
 )
 from PySide6.QtCore import Qt, QTimer, QRect, QEvent
-from PySide6.QtGui import QIcon, QPixmap, QPainter, QColor, QFont, QAction
+from PySide6.QtGui import QIcon, QPixmap, QPainter, QColor, QFont, QAction, QBitmap
 
 from data_manager import DataManager
 from hole_page import HolePage
@@ -182,7 +182,6 @@ class MainWindow(QMainWindow):
         self.setWindowTitle("挖坑备忘录")
         self.setMinimumSize(600, 400)
         self.setWindowFlags(Qt.FramelessWindowHint)
-        self.setAttribute(Qt.WA_TranslucentBackground)
 
         self.setup_ui()
         self.setup_tray()
@@ -381,18 +380,13 @@ class MainWindow(QMainWindow):
         font_size = self.settings.get("font_size", 12)
 
         stylesheet = f"""
-            QMainWindow {{
-                background-color: transparent;
-            }}
-            QWidget {{
+            QMainWindow, QWidget {{
                 background-color: {bg};
                 color: {text};
                 font-size: {font_size}px;
             }}
             #central {{
-                background-color: {bg};
                 border: 1px solid {border};
-                border-radius: 10px;
             }}
             #header {{
                 background-color: {bg};
@@ -637,6 +631,7 @@ class MainWindow(QMainWindow):
         self.setWindowOpacity(transparency)
         self.stack.setEnabled(False)
         self.show()
+        self._update_mask()
 
     def _unpin_window(self):
         self.pin_btn.setChecked(False)
@@ -644,6 +639,7 @@ class MainWindow(QMainWindow):
         self.setWindowOpacity(1.0)
         self.stack.setEnabled(True)
         self.show()
+        self._update_mask()
 
     # ========== 窗口状态 ==========
 
@@ -674,6 +670,23 @@ class MainWindow(QMainWindow):
     def resizeEvent(self, event):
         super().resizeEvent(event)
         self._save_window_state()
+        self._update_mask()
+
+    def showEvent(self, event):
+        super().showEvent(event)
+        self._update_mask()
+
+    def _update_mask(self):
+        """用位图遮罩实现窗口圆角"""
+        bitmap = QBitmap(self.size())
+        bitmap.fill(Qt.color0)
+        painter = QPainter(bitmap)
+        painter.setRenderHint(QPainter.Antialiasing)
+        painter.setBrush(Qt.color1)
+        painter.setPen(Qt.NoPen)
+        painter.drawRoundedRect(self.rect(), 10, 10)
+        painter.end()
+        self.setMask(bitmap)
 
     # ========== 关闭事件 ==========
 
