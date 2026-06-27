@@ -52,14 +52,13 @@ pip install -r requirements.txt
 python main.py
 ```
 
-## 打包为 EXE
+## 打包为 EXE 启动器
 
 ```bash
-pip install pyinstaller
-build.bat
+build_launcher.bat
 ```
 
-打包后 exe 位于 `dist\挖坑备忘录.exe`，可放到任意目录运行。
+使用 Windows 自带 `csc.exe` 编译 C# 启动器，生成 `挖坑备忘录.exe`（~5 KB）。将该 exe 放到 `main.py` 同目录下双击即可启动程序，无需安装 PyInstaller。
 
 ## 项目结构
 
@@ -70,6 +69,7 @@ HoleList/
 ├── hole_page.py          # 坑页面（三栏、流转、增删改查）
 ├── memo_page.py          # 备忘录页面（排序、勾选、拖拽）
 ├── settings_dialog.py    # 设置对话框
-├── build.bat             # PyInstaller 打包脚本
+├── launcher.cs           # C# 启动器源码
+├── build_launcher.bat    # 编译启动器脚本
 └── requirements.txt      # 依赖
 ```

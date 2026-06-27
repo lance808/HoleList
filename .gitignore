@@ -8,10 +8,8 @@ __pycache__/
 *.pyc
 *.pyo
 
-# PyInstaller
-build/
-dist/
-*.spec
+# 启动器编译产物
+挖坑备忘录.exe
 
 # IDE
 .vscode/
