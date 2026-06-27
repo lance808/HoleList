@@ -7,7 +7,7 @@ from PySide6.QtWidgets import (
     QPushButton, QStackedWidget, QSystemTrayIcon, QMenu, QButtonGroup,
     QMessageBox, QDialog, QFrame, QSizePolicy,
 )
-from PySide6.QtCore import Qt, QTimer, QRect
+from PySide6.QtCore import Qt, QTimer, QRect, QEvent
 from PySide6.QtGui import QIcon, QPixmap, QPainter, QColor, QFont, QAction
 
 from data_manager import DataManager
@@ -68,7 +68,7 @@ class HeaderWidget(QWidget):
 
 
 class CentralWidget(QWidget):
-    """中央控件 - 处理窗口边缘拖拽缩放"""
+    """中央控件 - 通过全局事件过滤器处理窗口边缘拖拽缩放"""
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -77,6 +77,7 @@ class CentralWidget(QWidget):
         self._resize_start = None
         self._resize_geo = None
         self.setMouseTracking(True)
+        QApplication.instance().installEventFilter(self)
 
     @staticmethod
     def _get_edge(pos, w, h, b=5):
@@ -94,14 +95,32 @@ class CentralWidget(QWidget):
         if right: return "r"
         return None
 
-    def mouseMoveEvent(self, event):
+    def _map_pos(self, event):
+        """将事件坐标映射到本控件"""
+        gp = event.globalPosition().toPoint()
+        return self.mapFromGlobal(gp)
+
+    def eventFilter(self, obj, event):
+        """全局事件过滤器：捕获鼠标事件以处理窗口缩放"""
+        if not isinstance(obj, QWidget) or obj.window() is not self._main:
+            return super().eventFilter(obj, event)
+        t = event.type()
+        if t == QEvent.MouseMove:
+            self._on_mouse_move(event)
+        elif t == QEvent.MouseButtonPress:
+            self._on_mouse_press(event)
+        elif t == QEvent.MouseButtonRelease:
+            self._on_mouse_release(event)
+        return super().eventFilter(obj, event)
+
+    def _on_mouse_move(self, event):
         if self._main.pinned or self._main.isMaximized():
             self.setCursor(Qt.ArrowCursor)
             return
         if self._resize_edge:
             self._do_resize(event)
             return
-        pos = event.position().toPoint()
+        pos = self._map_pos(event)
         edge = self._get_edge(pos, self.width(), self.height())
         cursors = {
             "tl": Qt.SizeFDiagCursor, "br": Qt.SizeFDiagCursor,
@@ -111,20 +130,19 @@ class CentralWidget(QWidget):
         }
         self.setCursor(cursors.get(edge, Qt.ArrowCursor))
 
-    def mousePressEvent(self, event):
-        if event.button() == Qt.LeftButton and not self._main.pinned:
-            pos = event.position().toPoint()
-            edge = self._get_edge(pos, self.width(), self.height())
-            if edge:
-                self._resize_edge = edge
-                self._resize_start = event.globalPosition().toPoint()
-                self._resize_geo = self._main.geometry()
-                return
-        super().mousePressEvent(event)
+    def _on_mouse_press(self, event):
+        if event.button() != Qt.LeftButton or self._main.pinned:
+            return
+        pos = self._map_pos(event)
+        edge = self._get_edge(pos, self.width(), self.height())
+        if edge:
+            self._resize_edge = edge
+            self._resize_start = event.globalPosition().toPoint()
+            self._resize_geo = self._main.geometry()
+            event.accept()
 
-    def mouseReleaseEvent(self, event):
+    def _on_mouse_release(self, event):
         self._resize_edge = None
-        super().mouseReleaseEvent(event)
 
     def _do_resize(self, event):
         delta = event.globalPosition().toPoint() - self._resize_start
