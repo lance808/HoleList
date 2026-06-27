@@ -1,11 +1,13 @@
 import sys
 import os
+import ctypes
 import winreg
+from ctypes import wintypes
 
 from PySide6.QtWidgets import (
     QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
     QPushButton, QStackedWidget, QSystemTrayIcon, QMenu, QButtonGroup,
-    QMessageBox, QDialog,
+    QMessageBox, QDialog, QFrame,
 )
 from PySide6.QtCore import Qt, QTimer
 from PySide6.QtGui import QIcon, QPixmap, QPainter, QColor, QFont, QAction
@@ -33,6 +35,40 @@ def create_icon(color="#4A90D9"):
     return QIcon(pixmap)
 
 
+class HeaderWidget(QWidget):
+    """自定义标题栏，支持拖拽移动 + 双击最大化"""
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self._drag_pos = None
+        self.setObjectName("header")
+        self.setFixedHeight(40)
+
+    def mousePressEvent(self, event):
+        if event.button() == Qt.LeftButton:
+            self._drag_pos = event.globalPosition().toPoint()
+
+    def mouseMoveEvent(self, event):
+        if self._drag_pos is not None:
+            window = self.window()
+            if window.isMaximized():
+                window.showNormal()
+            delta = event.globalPosition().toPoint() - self._drag_pos
+            window.move(window.pos() + delta)
+            self._drag_pos = event.globalPosition().toPoint()
+
+    def mouseReleaseEvent(self, event):
+        self._drag_pos = None
+
+    def mouseDoubleClickEvent(self, event):
+        if event.button() == Qt.LeftButton:
+            window = self.window()
+            if window.isMaximized():
+                window.showNormal()
+            else:
+                window.showMaximized()
+
+
 class MainWindow(QMainWindow):
     """主窗口"""
 
@@ -45,6 +81,7 @@ class MainWindow(QMainWindow):
 
         self.setWindowTitle("挖坑备忘录")
         self.setMinimumSize(600, 400)
+        self.setWindowFlags(Qt.FramelessWindowHint)
 
         self.setup_ui()
         self.setup_tray()
@@ -52,15 +89,37 @@ class MainWindow(QMainWindow):
         self.restore_geometry()
         self.refresh_all()
 
-        # 保存窗口位置
         self._save_timer = QTimer()
         self._save_timer.setInterval(2000)
         self._save_timer.timeout.connect(self._save_window_state)
         self._save_timer.start()
 
-        # 加载数据
         self.tab_hole.setChecked(True)
         self.stack.setCurrentIndex(0)
+
+    def nativeEvent(self, eventType, message):
+        """处理窗口边缘拖拽缩放 (WM_NCHITTEST)"""
+        if eventType == "windows_generic_MSG":
+            ptr = ctypes.c_void_p(int(message))
+            msg = ctypes.cast(ptr, ctypes.POINTER(wintypes.MSG))
+            if msg.contents.message == 0x0084:
+                x = msg.contents.lParam & 0xFFFF
+                y = (msg.contents.lParam >> 16) & 0xFFFF
+                geo = self.geometry()
+                b = 5
+                left = x < geo.x() + b
+                right = x > geo.x() + geo.width() - b
+                top = y < geo.y() + b
+                bottom = y > geo.y() + geo.height() - b
+                if top and left: return True, 13
+                if top and right: return True, 14
+                if bottom and left: return True, 16
+                if bottom and right: return True, 17
+                if top: return True, 12
+                if bottom: return True, 15
+                if left: return True, 10
+                if right: return True, 11
+        return False, 0
 
     # ========== UI 构建 ==========
 
@@ -75,7 +134,6 @@ class MainWindow(QMainWindow):
         layout.addWidget(self._create_header())
 
         # 分隔线
-        from PySide6.QtWidgets import QFrame
         sep = QFrame()
         sep.setFrameShape(QFrame.HLine)
         sep.setObjectName("headerSep")
@@ -90,17 +148,15 @@ class MainWindow(QMainWindow):
         layout.addWidget(self.stack)
 
     def _create_header(self):
-        header = QWidget()
-        header.setObjectName("header")
-        header.setFixedHeight(40)
+        header = HeaderWidget()
         layout = QHBoxLayout(header)
-        layout.setContentsMargins(8, 4, 8, 4)
+        layout.setContentsMargins(8, 4, 4, 4)
         layout.setSpacing(6)
 
         # 主题切换
         self.theme_btn = QPushButton()
         self.theme_btn.setFixedSize(32, 28)
-        self.theme_btn.setToolTip("切换白天/黑夜模式")
+        self.theme_btn.setToolTip("切换白天/黑夜/自定义模式")
         self.theme_btn.clicked.connect(self.toggle_theme)
         layout.addWidget(self.theme_btn)
 
@@ -144,7 +200,39 @@ class MainWindow(QMainWindow):
         layout.addWidget(self.tab_hole)
         layout.addWidget(self.tab_memo)
 
+        layout.addStretch()
+
+        # 窗口控制按钮
+        self.min_btn = QPushButton("─")
+        self.min_btn.setFixedSize(32, 28)
+        self.min_btn.setObjectName("winBtn")
+        self.min_btn.setToolTip("最小化")
+        self.min_btn.clicked.connect(self.showMinimized)
+        layout.addWidget(self.min_btn)
+
+        self.max_btn = QPushButton("□")
+        self.max_btn.setFixedSize(32, 28)
+        self.max_btn.setObjectName("winBtn")
+        self.max_btn.setToolTip("最大化")
+        self.max_btn.clicked.connect(self._toggle_maximize)
+        layout.addWidget(self.max_btn)
+
+        self.close_btn = QPushButton("✕")
+        self.close_btn.setFixedSize(32, 28)
+        self.close_btn.setObjectName("winCloseBtn")
+        self.close_btn.setToolTip("关闭")
+        self.close_btn.clicked.connect(self.close)
+        layout.addWidget(self.close_btn)
+
         return header
+
+    def _toggle_maximize(self):
+        if self.isMaximized():
+            self.showNormal()
+            self.max_btn.setText("□")
+        else:
+            self.showMaximized()
+            self.max_btn.setText("❐")
 
     # ========== 系统托盘 ==========
 
@@ -219,6 +307,9 @@ class MainWindow(QMainWindow):
                 background-color: {bg};
                 color: {text};
                 font-size: {font_size}px;
+            }}
+            QMainWindow {{
+                border: 1px solid {border};
             }}
             #header {{
                 background-color: {bg};
@@ -365,6 +456,27 @@ class MainWindow(QMainWindow):
             QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {{
                 height: 0;
             }}
+            #winBtn {{
+                border: none;
+                background-color: transparent;
+                font-size: 14px;
+                font-weight: bold;
+                padding: 0;
+            }}
+            #winBtn:hover {{
+                background-color: {self._blend(bg, text, 0.1)};
+            }}
+            #winCloseBtn {{
+                border: none;
+                background-color: transparent;
+                font-size: 14px;
+                font-weight: bold;
+                padding: 0;
+            }}
+            #winCloseBtn:hover {{
+                background-color: #E81123;
+                color: white;
+            }}
         """
         self.setStyleSheet(stylesheet)
         app = QApplication.instance()
@@ -437,23 +549,15 @@ class MainWindow(QMainWindow):
 
     def _pin_window(self):
         self.pin_btn.setChecked(True)
-        self.setWindowFlags(
-            self.windowFlags() | Qt.WindowStaysOnTopHint | Qt.FramelessWindowHint
-        )
+        self.setWindowFlags(self.windowFlags() | Qt.WindowStaysOnTopHint)
         transparency = self.settings.get("transparency", 60) / 100.0
         self.setWindowOpacity(transparency)
-        # 禁用内容区操作
         self.stack.setEnabled(False)
         self.show()
 
     def _unpin_window(self):
         self.pin_btn.setChecked(False)
-        self.setWindowFlags(
-            Qt.Window |
-            Qt.WindowMinimizeButtonHint |
-            Qt.WindowMaximizeButtonHint |
-            Qt.WindowCloseButtonHint
-        )
+        self.setWindowFlags(self.windowFlags() & ~Qt.WindowStaysOnTopHint)
         self.setWindowOpacity(1.0)
         self.stack.setEnabled(True)
         self.show()
