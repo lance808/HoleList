@@ -14,7 +14,7 @@ if %errorlevel% neq 0 (
 
 echo [*] 开始打包...
 
-pyinstaller --onefile --windowed --name "挖坑备忘录" --icon=NONE ^
+pyinstaller --onefile --windowed --noconfirm --clean --name "挖坑备忘录" ^
     --add-data "data_manager.py;." ^
     --add-data "hole_page.py;." ^
     --add-data "memo_page.py;." ^
