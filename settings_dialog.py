@@ -20,7 +20,7 @@ class ColorInput(QWidget):
         layout.addWidget(QLabel(label_text))
 
         self.edit = QLineEdit(default_color)
-        self.edit.setMaximumWidth(80)
+        self.edit.setMaximumWidth(100)
         self.edit.setPlaceholderText("#FFFFFF")
         layout.addWidget(self.edit)
 
