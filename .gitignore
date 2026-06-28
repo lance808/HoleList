@@ -9,7 +9,7 @@ __pycache__/
 *.pyo
 
 # 启动器编译产物
-挖坑备忘录.exe
+HoleList.exe
 
 # IDE
 .vscode/

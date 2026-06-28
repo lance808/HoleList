@@ -185,7 +185,7 @@ class MainWindow(QMainWindow):
         self.pinned = False
         self._closing = False
 
-        self.setWindowTitle("挖坑备忘录")
+        self.setWindowTitle("HoleList")
         self.setMinimumSize(600, 400)
         self.setWindowFlags(Qt.FramelessWindowHint)
 
@@ -335,7 +335,7 @@ class MainWindow(QMainWindow):
     def setup_tray(self):
         self.tray_icon = QSystemTrayIcon(self)
         self.tray_icon.setIcon(create_icon())
-        self.tray_icon.setToolTip("挖坑备忘录")
+        self.tray_icon.setToolTip("HoleList")
 
         tray_menu = QMenu()
         restore_action = QAction("恢复窗口", self)

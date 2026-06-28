@@ -1,4 +1,4 @@
-# 挖坑备忘录
+# HoleList
 
 一个基于 PySide6 的桌面备忘录工具，包含任务流转（挖坑系统）和时间排序备忘录。
 
@@ -58,7 +58,7 @@ python main.py
 build_launcher.bat
 ```
 
-使用 Windows 自带 `csc.exe` 编译 C# 启动器，生成 `挖坑备忘录.exe`（~5 KB）。将该 exe 放到 `main.py` 同目录下双击即可启动程序，无需安装 PyInstaller。
+使用 Windows 自带 `csc.exe` 编译 C# 启动器，生成 `HoleList.exe`（~5 KB）。将该 exe 放到 `main.py` 同目录下双击即可启动程序，无需安装 PyInstaller。
 
 ## 项目结构
 

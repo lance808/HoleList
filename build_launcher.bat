@@ -1,7 +1,7 @@
 @echo off
 chcp 65001 >nul
 echo ========================================
-echo   挖坑备忘录 - 启动器编译
+echo   HoleList - 启动器编译
 echo ========================================
 echo.
 
@@ -21,12 +21,12 @@ if "%CSC%"=="" (
 
 echo [*] 编译器: %CSC%
 echo [*] 正在编译 launcher.cs ...
-%CSC% /target:winexe /out:挖坑备忘录.exe launcher.cs
+%CSC% /target:winexe /out:HoleList.exe launcher.cs
 
 if %errorlevel% equ 0 (
     echo.
     echo ========================================
-    echo   编译完成! 启动器: 挖坑备忘录.exe
+    echo   编译完成! 启动器: HoleList.exe
     echo   将该 exe 放到 main.py 同目录下双击即可
     echo ========================================
 ) else (
