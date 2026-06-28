@@ -219,7 +219,7 @@ class HoleColumn(QWidget):
 
         # 添加按钮 (仅挖坑列)
         if self.status == "digging":
-            self.add_btn = QPushButton("＋ 挖坑 ＋")
+            self.add_btn = QPushButton(" 挖坑 ")
             self.add_btn.setObjectName("addBtn")
             self.add_btn.clicked.connect(self._on_add)
             layout.addWidget(self.add_btn)

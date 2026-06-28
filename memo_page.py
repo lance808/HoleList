@@ -171,7 +171,7 @@ class MemoPage(QWidget):
         layout.addWidget(self.list_widget)
 
         # 添加按钮
-        self.add_btn = QPushButton("＋ 添加 ＋")
+        self.add_btn = QPushButton(" 添加 ")
         self.add_btn.setObjectName("addBtn")
         self.add_btn.clicked.connect(self._on_add)
         layout.addWidget(self.add_btn)
