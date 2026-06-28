@@ -29,7 +29,7 @@ def create_icon(color="#4A90D9"):
     painter.setPen(Qt.white)
     font = QFont("Microsoft YaHei", 14, QFont.Bold)
     painter.setFont(font)
-    painter.drawText(pixmap.rect(), Qt.AlignCenter, "HL")
+    painter.drawText(pixmap.rect(), Qt.AlignCenter, "H")
     painter.end()
     return QIcon(pixmap)
 
