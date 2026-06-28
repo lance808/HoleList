@@ -45,11 +45,16 @@ class HeaderWidget(QWidget):
 
     def mousePressEvent(self, event):
         if event.button() == Qt.LeftButton:
+            window = self.window()
+            if getattr(window, "pinned", False):
+                return
             self._drag_pos = event.globalPosition().toPoint()
 
     def mouseMoveEvent(self, event):
         if self._drag_pos is not None:
             window = self.window()
+            if getattr(window, "pinned", False):
+                return
             if window.isMaximized():
                 window.showNormal()
             delta = event.globalPosition().toPoint() - self._drag_pos
@@ -653,6 +658,9 @@ class MainWindow(QMainWindow):
 
     def _pin_window(self):
         self.pin_btn.setChecked(True)
+        self.pinned = True
+        # 保存固定前的位置
+        self._saved_geo = self.geometry()
         self._set_topmost(True)
         transparency = self.settings.get("transparency", 60) / 100.0
         self.setWindowOpacity(transparency)
@@ -660,9 +668,13 @@ class MainWindow(QMainWindow):
 
     def _unpin_window(self):
         self.pin_btn.setChecked(False)
+        self.pinned = False
         self._set_topmost(False)
         self.setWindowOpacity(1.0)
         self.stack.setEnabled(True)
+        # 恢复固定前的位置
+        if hasattr(self, "_saved_geo"):
+            self.setGeometry(self._saved_geo)
 
     # ========== 窗口状态 ==========
 
