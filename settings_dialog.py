@@ -129,6 +129,23 @@ class SettingsDialog(QDialog):
         self.auto_start_cb = QCheckBox("开机自启")
         layout.addWidget(self.auto_start_cb)
 
+        # === 默认打开页面 ===
+        tab_layout = QHBoxLayout()
+        tab_layout.addWidget(QLabel("默认打开页面:"))
+        self.default_tab_group = QButtonGroup(self)
+        self.radio_default_hole = QRadioButton("坑")
+        self.radio_default_memo = QRadioButton("备忘录")
+        self.default_tab_group.addButton(self.radio_default_hole, 0)
+        self.default_tab_group.addButton(self.radio_default_memo, 1)
+        tab_layout.addWidget(self.radio_default_hole)
+        tab_layout.addWidget(self.radio_default_memo)
+        tab_layout.addStretch()
+        layout.addLayout(tab_layout)
+
+        # === 默认固定 ===
+        self.default_pinned_cb = QCheckBox("启动时默认固定到桌面")
+        layout.addWidget(self.default_pinned_cb)
+
         layout.addStretch()
 
         # === 按钮 ===
@@ -165,6 +182,14 @@ class SettingsDialog(QDialog):
         self.font_spin.setValue(s.get("font_size", 12))
         self.auto_start_cb.setChecked(s.get("auto_start", False))
 
+        default_tab = s.get("default_tab", 0)
+        if default_tab == 0:
+            self.radio_default_hole.setChecked(True)
+        else:
+            self.radio_default_memo.setChecked(True)
+
+        self.default_pinned_cb.setChecked(s.get("default_pinned", False))
+
         self._on_theme_changed()
 
     def _on_theme_changed(self):
@@ -189,6 +214,8 @@ class SettingsDialog(QDialog):
         self.settings["transparency"] = self.transp_slider.value()
         self.settings["font_size"] = self.font_spin.value()
         self.settings["auto_start"] = self.auto_start_cb.isChecked()
+        self.settings["default_tab"] = self.default_tab_group.checkedId()
+        self.settings["default_pinned"] = self.default_pinned_cb.isChecked()
 
         self.data_manager.save_settings(self.settings)
         self.accept()

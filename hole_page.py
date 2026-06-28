@@ -186,6 +186,7 @@ class HoleColumn(QWidget):
         super().__init__(parent)
         self.status = status
         self.data_manager = data_manager
+        self.pinned = False
         self.setup_ui()
 
     def setup_ui(self):
@@ -218,16 +219,28 @@ class HoleColumn(QWidget):
 
         # 添加按钮 (仅挖坑列)
         if self.status == "digging":
-            add_btn = QPushButton("＋ 挖坑 ＋")
-            add_btn.setObjectName("addBtn")
-            add_btn.clicked.connect(self._on_add)
-            layout.addWidget(add_btn)
+            self.add_btn = QPushButton("＋ 挖坑 ＋")
+            self.add_btn.setObjectName("addBtn")
+            self.add_btn.clicked.connect(self._on_add)
+            layout.addWidget(self.add_btn)
+        else:
+            self.add_btn = None
+
+    def set_pinned(self, pinned):
+        self.pinned = pinned
+        if self.add_btn:
+            self.add_btn.setEnabled(not pinned)
+        self.list_widget.setEnabled(not pinned)
 
     def _on_double_click(self, item):
+        if self.pinned:
+            return
         hole_id = item.data(Qt.UserRole)
         self._edit_hole(hole_id)
 
     def _on_context_menu(self, pos):
+        if self.pinned:
+            return
         item = self.list_widget.itemAt(pos)
         if not item:
             return
@@ -243,6 +256,8 @@ class HoleColumn(QWidget):
             self._delete_hole(hole_id)
 
     def _on_add(self):
+        if self.pinned:
+            return
         dialog = HoleEditDialog(parent=self)
         if dialog.exec() == QDialog.Accepted:
             title, desc = dialog.get_data()
@@ -296,7 +311,13 @@ class HolePage(QWidget):
     def __init__(self, data_manager, parent=None):
         super().__init__(parent)
         self.data_manager = data_manager
+        self.pinned = False
         self.setup_ui()
+
+    def set_pinned(self, pinned):
+        self.pinned = pinned
+        for col in self.columns:
+            col.set_pinned(pinned)
 
     def setup_ui(self):
         layout = QVBoxLayout(self)

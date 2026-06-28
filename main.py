@@ -197,6 +197,19 @@ class MainWindow(QMainWindow):
         self.tab_hole.setChecked(True)
         self.stack.setCurrentIndex(0)
 
+        # 应用默认设置
+        default_tab = self.settings.get("default_tab", 0)
+        if default_tab == 1:
+            self.tab_memo.setChecked(True)
+            self.stack.setCurrentIndex(1)
+        else:
+            self.tab_hole.setChecked(True)
+            self.stack.setCurrentIndex(0)
+
+        if self.settings.get("default_pinned", False):
+            self.pinned = True
+            self._pin_window()
+
     # ========== UI 构建 ==========
 
     def setup_ui(self):
@@ -630,6 +643,8 @@ class MainWindow(QMainWindow):
         transparency = self.settings.get("transparency", 60) / 100.0
         self.setWindowOpacity(transparency)
         self.stack.setEnabled(False)
+        self.hole_page.set_pinned(True)
+        self.memo_page.set_pinned(True)
         self.show()
         self._update_mask()
 
@@ -638,6 +653,8 @@ class MainWindow(QMainWindow):
         self.setWindowFlags(self.windowFlags() & ~Qt.WindowStaysOnTopHint)
         self.setWindowOpacity(1.0)
         self.stack.setEnabled(True)
+        self.hole_page.set_pinned(False)
+        self.memo_page.set_pinned(False)
         self.show()
         self._update_mask()
 

@@ -34,10 +34,11 @@ class MemoItemWidget(QWidget):
     delete_requested = Signal(str)
     completed_toggled = Signal(str, bool)
 
-    def __init__(self, memo, index, parent=None):
+    def __init__(self, memo, index, pinned=False, parent=None):
         super().__init__(parent)
         self.memo = memo
         self.index = index
+        self.pinned = pinned
         self.setup_ui()
 
     def setup_ui(self):
@@ -57,6 +58,7 @@ class MemoItemWidget(QWidget):
         self.checkbox.toggled.connect(
             lambda checked: self.completed_toggled.emit(self.memo["id"], checked)
         )
+        self.checkbox.setEnabled(not self.pinned)
         layout.addWidget(self.checkbox)
 
         # 文字区域
@@ -92,6 +94,7 @@ class MemoItemWidget(QWidget):
         del_btn.setFixedSize(28, 28)
         del_btn.setObjectName("deleteBtn")
         del_btn.clicked.connect(lambda: self.delete_requested.emit(self.memo["id"]))
+        del_btn.setVisible(not self.pinned)
         layout.addWidget(del_btn)
 
         # 已完成状态设置透明度
@@ -151,6 +154,7 @@ class MemoPage(QWidget):
     def __init__(self, data_manager, parent=None):
         super().__init__(parent)
         self.data_manager = data_manager
+        self.pinned = False
         self.setup_ui()
 
     def setup_ui(self):
@@ -167,16 +171,26 @@ class MemoPage(QWidget):
         layout.addWidget(self.list_widget)
 
         # 添加按钮
-        add_btn = QPushButton("＋ 添加 ＋")
-        add_btn.setObjectName("addBtn")
-        add_btn.clicked.connect(self._on_add)
-        layout.addWidget(add_btn)
+        self.add_btn = QPushButton("＋ 添加 ＋")
+        self.add_btn.setObjectName("addBtn")
+        self.add_btn.clicked.connect(self._on_add)
+        layout.addWidget(self.add_btn)
+
+    def set_pinned(self, pinned):
+        """设置固定状态：禁用增删改，但保留拖拽排序"""
+        self.pinned = pinned
+        self.add_btn.setEnabled(not pinned)
+        self.refresh()
 
     def _on_double_click(self, item):
+        if self.pinned:
+            return
         memo_id = item.data(Qt.UserRole)
         self._edit_memo(memo_id)
 
     def _on_context_menu(self, pos):
+        if self.pinned:
+            return
         item = self.list_widget.itemAt(pos)
         if not item:
             return
@@ -235,7 +249,7 @@ class MemoPage(QWidget):
             item = QListWidgetItem()
             item.setData(Qt.UserRole, memo["id"])
             item.setSizeHint(QSize(0, 56))
-            widget = MemoItemWidget(memo, i)
+            widget = MemoItemWidget(memo, i, pinned=self.pinned)
             widget.edit_requested.connect(lambda mid=memo["id"]: self._edit_memo(mid))
             widget.delete_requested.connect(lambda mid=memo["id"]: self._delete_memo(mid))
             widget.completed_toggled.connect(self._on_completed_toggled)

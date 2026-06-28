@@ -32,6 +32,8 @@ class DataManager:
                 },
                 "transparency": 60,
                 "auto_start": False,
+                "default_tab": 0,
+                "default_pinned": False,
                 "font_size": 12,
                 "window": {"x": 100, "y": 100, "width": 800, "height": 600},
             },
