@@ -9,7 +9,7 @@ from PySide6.QtWidgets import (
     QMessageBox, QDialog, QFrame, QSizePolicy,
 )
 from PySide6.QtCore import Qt, QTimer, QRect, QEvent
-from PySide6.QtGui import QIcon, QPixmap, QPainter, QColor, QFont, QAction, QBitmap
+from PySide6.QtGui import QIcon, QPixmap, QPainter, QColor, QFont, QAction, QBitmap, QGraphicsOpacityEffect
 
 from data_manager import DataManager
 from hole_page import HolePage
@@ -655,16 +655,16 @@ class MainWindow(QMainWindow):
         self.pin_btn.setChecked(True)
         self._set_topmost(True)
         transparency = self.settings.get("transparency", 60) / 100.0
-        self.setWindowOpacity(transparency)
-        self.hole_page.set_pinned(True)
-        self.memo_page.set_pinned(True)
+        effect = QGraphicsOpacityEffect()
+        effect.setOpacity(transparency)
+        self.centralWidget().setGraphicsEffect(effect)
+        self.stack.setEnabled(False)
 
     def _unpin_window(self):
         self.pin_btn.setChecked(False)
         self._set_topmost(False)
-        self.setWindowOpacity(1.0)
-        self.hole_page.set_pinned(False)
-        self.memo_page.set_pinned(False)
+        self.centralWidget().setGraphicsEffect(None)
+        self.stack.setEnabled(True)
 
     # ========== 窗口状态 ==========
 
