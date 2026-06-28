@@ -6,7 +6,7 @@ import winreg
 from PySide6.QtWidgets import (
     QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
     QPushButton, QStackedWidget, QSystemTrayIcon, QMenu, QButtonGroup,
-    QMessageBox, QDialog, QFrame, QSizePolicy, QGraphicsOpacityEffect,
+    QMessageBox, QDialog, QFrame, QSizePolicy,
 )
 from PySide6.QtCore import Qt, QTimer, QRect, QEvent
 from PySide6.QtGui import QIcon, QPixmap, QPainter, QColor, QFont, QAction, QBitmap
@@ -655,15 +655,13 @@ class MainWindow(QMainWindow):
         self.pin_btn.setChecked(True)
         self._set_topmost(True)
         transparency = self.settings.get("transparency", 60) / 100.0
-        effect = QGraphicsOpacityEffect()
-        effect.setOpacity(transparency)
-        self.centralWidget().setGraphicsEffect(effect)
+        self.setWindowOpacity(transparency)
         self.stack.setEnabled(False)
 
     def _unpin_window(self):
         self.pin_btn.setChecked(False)
         self._set_topmost(False)
-        self.centralWidget().setGraphicsEffect(None)
+        self.setWindowOpacity(1.0)
         self.stack.setEnabled(True)
 
     # ========== 窗口状态 ==========
