@@ -1,5 +1,6 @@
 import sys
 import os
+import ctypes
 import winreg
 
 from PySide6.QtWidgets import (
@@ -637,28 +638,33 @@ class MainWindow(QMainWindow):
         else:
             self._unpin_window()
 
+    HWND_TOPMOST = -1
+    HWND_NOTOPMOST = -2
+    SWP_NOMOVE = 0x0002
+    SWP_NOSIZE = 0x0001
+
+    def _set_topmost(self, topmost):
+        hwnd = int(self.winId())
+        flag = self.HWND_TOPMOST if topmost else self.HWND_NOTOPMOST
+        ctypes.windll.user32.SetWindowPos(
+            hwnd, flag, 0, 0, 0, 0,
+            self.SWP_NOMOVE | self.SWP_NOSIZE,
+        )
+
     def _pin_window(self):
         self.pin_btn.setChecked(True)
-        self.hide()
-        self.setWindowFlags(self.windowFlags() | Qt.WindowStaysOnTopHint)
+        self._set_topmost(True)
         transparency = self.settings.get("transparency", 60) / 100.0
         self.setWindowOpacity(transparency)
-        self.stack.setEnabled(False)
         self.hole_page.set_pinned(True)
         self.memo_page.set_pinned(True)
-        self.show()
-        self._update_mask()
 
     def _unpin_window(self):
         self.pin_btn.setChecked(False)
-        self.hide()
-        self.setWindowFlags(self.windowFlags() & ~Qt.WindowStaysOnTopHint)
+        self._set_topmost(False)
         self.setWindowOpacity(1.0)
-        self.stack.setEnabled(True)
         self.hole_page.set_pinned(False)
         self.memo_page.set_pinned(False)
-        self.show()
-        self._update_mask()
 
     # ========== 窗口状态 ==========
 
