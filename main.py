@@ -639,6 +639,7 @@ class MainWindow(QMainWindow):
 
     def _pin_window(self):
         self.pin_btn.setChecked(True)
+        self.hide()
         self.setWindowFlags(self.windowFlags() | Qt.WindowStaysOnTopHint)
         transparency = self.settings.get("transparency", 60) / 100.0
         self.setWindowOpacity(transparency)
@@ -650,6 +651,7 @@ class MainWindow(QMainWindow):
 
     def _unpin_window(self):
         self.pin_btn.setChecked(False)
+        self.hide()
         self.setWindowFlags(self.windowFlags() & ~Qt.WindowStaysOnTopHint)
         self.setWindowOpacity(1.0)
         self.stack.setEnabled(True)
@@ -714,10 +716,6 @@ class MainWindow(QMainWindow):
         # 最小化到托盘
         event.ignore()
         self.hide()
-        self.tray_icon.showMessage(
-            "挖坑备忘录", "已最小化到系统托盘，双击图标恢复窗口。",
-            QSystemTrayIcon.Information, 2000,
-        )
 
     # ========== 刷新 ==========
 
