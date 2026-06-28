@@ -647,6 +647,9 @@ class MainWindow(QMainWindow):
     HWND_NOTOPMOST = -2
     SWP_NOMOVE = 0x0002
     SWP_NOSIZE = 0x0001
+    GWL_EXSTYLE = -20
+    WS_EX_TOOLWINDOW = 0x00000080
+    WS_EX_APPWINDOW = 0x00040000
 
     def _set_topmost(self, topmost):
         hwnd = int(self.winId())
@@ -656,12 +659,25 @@ class MainWindow(QMainWindow):
             self.SWP_NOMOVE | self.SWP_NOSIZE,
         )
 
+    def _set_taskbar_visible(self, visible):
+        hwnd = int(self.winId())
+        ex = ctypes.windll.user32.GetWindowLongW(hwnd, self.GWL_EXSTYLE)
+        if visible:
+            ex = (ex | self.WS_EX_APPWINDOW) & ~self.WS_EX_TOOLWINDOW
+        else:
+            ex = (ex | self.WS_EX_TOOLWINDOW) & ~self.WS_EX_APPWINDOW
+        ctypes.windll.user32.SetWindowLongW(hwnd, self.GWL_EXSTYLE, ex)
+        ctypes.windll.user32.SetWindowPos(
+            hwnd, 0, 0, 0, 0, 0,
+            self.SWP_NOMOVE | self.SWP_NOSIZE | 0x0001,
+        )
+
     def _pin_window(self):
         self.pin_btn.setChecked(True)
         self.pinned = True
-        # 保存固定前的位置
         self._saved_geo = self.geometry()
         self._set_topmost(True)
+        self._set_taskbar_visible(False)
         transparency = self.settings.get("transparency", 60) / 100.0
         self.setWindowOpacity(transparency)
         self.stack.setEnabled(False)
@@ -670,9 +686,9 @@ class MainWindow(QMainWindow):
         self.pin_btn.setChecked(False)
         self.pinned = False
         self._set_topmost(False)
+        self._set_taskbar_visible(True)
         self.setWindowOpacity(1.0)
         self.stack.setEnabled(True)
-        # 恢复固定前的位置
         if hasattr(self, "_saved_geo"):
             self.setGeometry(self._saved_geo)
 
