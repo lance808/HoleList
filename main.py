@@ -6,10 +6,10 @@ import winreg
 from PySide6.QtWidgets import (
     QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
     QPushButton, QStackedWidget, QSystemTrayIcon, QMenu, QButtonGroup,
-    QMessageBox, QDialog, QFrame, QSizePolicy,
+    QMessageBox, QDialog, QFrame, QSizePolicy, QGraphicsOpacityEffect,
 )
 from PySide6.QtCore import Qt, QTimer, QRect, QEvent
-from PySide6.QtGui import QIcon, QPixmap, QPainter, QColor, QFont, QAction, QBitmap, QGraphicsOpacityEffect
+from PySide6.QtGui import QIcon, QPixmap, QPainter, QColor, QFont, QAction, QBitmap
 
 from data_manager import DataManager
 from hole_page import HolePage
