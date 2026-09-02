@@ -619,12 +619,10 @@ class MainWindow(QMainWindow):
                 0, winreg.KEY_SET_VALUE,
             )
             if enabled:
-                exe_path = sys.executable
-                if getattr(sys, 'frozen', False):
-                    exe_path = sys.executable
-                else:
-                    exe_path = sys.argv[0]
-                winreg.SetValueEx(key, "HoleList", 0, winreg.REG_SZ, exe_path)
+                winreg.SetValueEx(
+                    key, "HoleList", 0, winreg.REG_SZ,
+                    self._build_auto_start_command(),
+                )
             else:
                 try:
                     winreg.DeleteValue(key, "HoleList")
@@ -633,6 +631,25 @@ class MainWindow(QMainWindow):
             winreg.CloseKey(key)
         except Exception:
             pass
+
+    def _build_auto_start_command(self):
+        """构建开机自启命令（路径可能含空格，统一加引号）：
+        1. 冻结打包（PyInstaller 等）：直接使用 exe 自身；
+        2. main.py 同目录存在 HoleList.exe（C# 启动器）：写入启动器，无控制台窗口；
+        3. 开发环境回退：用 pythonw.exe 无窗口运行 main.py。
+        """
+        if getattr(sys, "frozen", False):
+            return f'"{sys.executable}"'
+
+        main_py = os.path.abspath(sys.argv[0])
+        launcher_exe = os.path.join(os.path.dirname(main_py), "HoleList.exe")
+        if os.path.exists(launcher_exe):
+            return f'"{launcher_exe}"'
+
+        pythonw = os.path.join(os.path.dirname(sys.executable), "pythonw.exe")
+        if not os.path.exists(pythonw):
+            pythonw = sys.executable
+        return f'"{pythonw}" "{main_py}"'
 
     # ========== 桌面固定 ==========
 
