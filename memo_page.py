@@ -207,6 +207,7 @@ class MemoPage(QWidget):
     def _on_order_changed(self):
         ids = self.list_widget.get_memo_ids()
         self.data_manager.reorder_memos(ids)
+        self.refresh()
 
     def _on_add(self):
         dialog = MemoEditDialog(parent=self)

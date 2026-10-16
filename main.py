@@ -184,6 +184,7 @@ class MainWindow(QMainWindow):
         self.settings = self.data_manager.load_settings()
         self.pinned = False
         self._closing = False
+        self._editing_settings = False
 
         self.setWindowTitle("HoleList")
         self.setMinimumSize(600, 400)
@@ -303,7 +304,7 @@ class MainWindow(QMainWindow):
         self.min_btn.setFixedSize(32, 28)
         self.min_btn.setObjectName("winBtn")
         self.min_btn.setToolTip("最小化")
-        self.min_btn.clicked.connect(self.showMinimized)
+        self.min_btn.clicked.connect(self.hide)
         layout.addWidget(self.min_btn)
 
         self.max_btn = QPushButton("□")
@@ -387,9 +388,9 @@ class MainWindow(QMainWindow):
             border = colors.get("border", "#CCCCCC")
             self.theme_btn.setText("🎨")
         else:
-            bg = colors.get("bg", "#FFFFFF")
-            text = colors.get("text", "#333333")
-            border = colors.get("border", "#CCCCCC")
+            bg = "#FFFFFF"
+            text = "#333333"
+            border = "#CCCCCC"
             self.theme_btn.setText("☾")
 
         self._current_bg = bg
@@ -604,11 +605,17 @@ class MainWindow(QMainWindow):
     # ========== 设置 ==========
 
     def open_settings(self):
-        dialog = SettingsDialog(self.data_manager, self)
-        if dialog.exec() == QDialog.Accepted:
-            self.settings = self.data_manager.load_settings()
-            self.apply_theme()
-            self._handle_auto_start()
+        self._editing_settings = True
+        try:
+            dialog = SettingsDialog(self.data_manager, self)
+            if dialog.exec() == QDialog.Accepted:
+                self.settings = self.data_manager.load_settings()
+                self.apply_theme()
+                if self.pinned:
+                    self.setWindowOpacity(self.settings.get("transparency", 60) / 100.0)
+                self._handle_auto_start()
+        finally:
+            self._editing_settings = False
 
     def _handle_auto_start(self):
         enabled = self.settings.get("auto_start", False)
@@ -720,9 +727,9 @@ class MainWindow(QMainWindow):
         self.setGeometry(x, y, width, height)
 
     def _save_window_state(self):
-        if self.pinned:
+        if self.pinned or self._editing_settings or self.isMinimized():
             return
-        geo = self.geometry()
+        geo = self.normalGeometry() if self.isMaximized() else self.geometry()
         self.settings["window"] = {
             "x": geo.x(),
             "y": geo.y(),
@@ -757,6 +764,15 @@ class MainWindow(QMainWindow):
         self.setMask(bitmap)
 
     # ========== 关闭事件 ==========
+
+    def changeEvent(self, event):
+        super().changeEvent(event)
+        if event.type() == QEvent.WindowStateChange and self.isMinimized():
+            QTimer.singleShot(0, self._hide_if_minimized)
+
+    def _hide_if_minimized(self):
+        if self.isMinimized():
+            self.hide()
 
     def closeEvent(self, event):
         if self._closing:
